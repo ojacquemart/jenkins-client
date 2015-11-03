@@ -8,12 +8,10 @@ package com.offbytwo.jenkins.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.offbytwo.jenkins.client.util.RequestReleasingInputStream;
-//import com.offbytwo.jenkins.client.util.HttpResponseContentExtractor;
 import com.offbytwo.jenkins.client.validator.HttpResponseValidator;
 import com.offbytwo.jenkins.model.BaseModel;
 import com.offbytwo.jenkins.model.Crumb;
 import com.offbytwo.jenkins.model.ExtractHeader;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
@@ -28,7 +26,6 @@ import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.CoreConnectionPNames;
@@ -42,6 +39,8 @@ import java.net.URI;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 import static org.apache.commons.lang.StringUtils.isNotBlank;
+
+//import com.offbytwo.jenkins.client.util.HttpResponseContentExtractor;
 
 public class JenkinsHttpClient {
 
@@ -123,6 +122,16 @@ public class JenkinsHttpClient {
         }
     }
 
+    public <T extends BaseModel> T  getQuietly(String path, Class<T> cls) {
+        T value;
+        try {
+            value = get(path, cls);
+        } catch (IOException e) {
+            return null;
+        }
+        return value;
+    }
+
     /**
      * Perform a GET request and parse the response to the given class
      *
@@ -196,7 +205,7 @@ public class JenkinsHttpClient {
     public <R extends BaseModel, D> R post(String path, D data, Class<R> cls, boolean crumbFlag) throws IOException {
         HttpPost request = new HttpPost(api(path));
         if (crumbFlag == true) {
-            Crumb crumb = get("/crumbIssuer", Crumb.class);
+            Crumb crumb = getQuietly("/crumbIssuer", Crumb.class);
             if (crumb != null) {
                 request.addHeader(new BasicHeader(crumb.getCrumbRequestField(), crumb.getCrumb()));
             }
@@ -246,7 +255,7 @@ public class JenkinsHttpClient {
     public String post_xml(String path, String xml_data, boolean crumbFlag) throws IOException {
         HttpPost request = new HttpPost(api(path));
         if (crumbFlag == true) {
-            Crumb crumb = get("/crumbIssuer", Crumb.class);
+            Crumb crumb = getQuietly("/crumbIssuer", Crumb.class);
             if (crumb != null) {
                 request.addHeader(new BasicHeader(crumb.getCrumbRequestField(), crumb.getCrumb()));
             }
